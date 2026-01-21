@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Jadwal } from '../jadwal/jadwal.entity';
 
 @Entity()
 export class Kelas {
@@ -13,4 +14,7 @@ export class Kelas {
 
   @Column()
   kapasitas: number;
+
+  @OneToMany(() => Jadwal, (jadwal) => jadwal.kelas)
+  jadwal: Jadwal[];
 }

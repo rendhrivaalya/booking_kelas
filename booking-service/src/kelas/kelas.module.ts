@@ -5,7 +5,9 @@ import { KelasService } from './kelas.service';
 import { KelasController } from './kelas.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Kelas])],
+  imports: [
+    TypeOrmModule.forFeature([Kelas]), // ⬅️ INI WAJIB
+  ],
   controllers: [KelasController],
   providers: [KelasService],
 })
