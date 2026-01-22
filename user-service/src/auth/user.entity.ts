@@ -6,11 +6,16 @@ export class User {
   id: number;
 
   @Column({ unique: true })
+  email: string;
+
+  @Column({ unique: true })
   username: string;
 
   @Column()
   password: string;
 
-  @Column()
-  role: string;
+  // TAMBAHAN: Kolom Role
+  // Defaultnya 'mahasiswa' supaya aman
+  @Column({ default: 'mahasiswa' }) 
+  role: string; // Isinya nanti: 'mahasiswa', 'dosen', 'staf'
 }

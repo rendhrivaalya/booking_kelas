@@ -15,6 +15,14 @@ export class KelasService {
     return this.kelasRepository.find();
   }
 
+  // Tambahkan di KelasService
+async findOne(id: number): Promise<Kelas> {
+  const kelas = await this.kelasRepository.findOneBy({ id });
+  if (!kelas) throw new Error('Kelas tidak ditemukan');
+  return kelas;
+}
+
+
   // POST tambah kelas
   create(data: Partial<Kelas>) {
     const kelas = this.kelasRepository.create(data);

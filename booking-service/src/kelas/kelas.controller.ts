@@ -1,39 +1,28 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { KelasService } from './kelas.service';
+import { CreateKelasDto } from './kelas.dto';
 
 @Controller('kelas')
 export class KelasController {
   constructor(private readonly kelasService: KelasService) {}
 
-  // GET /kelas
+  @Post()
+  create(@Body() body: CreateKelasDto) {
+    return this.kelasService.create(body);
+  }
+
   @Get()
   findAll() {
     return this.kelasService.findAll();
   }
 
-  // POST /kelas
-  @Post()
-  create(@Body() body) {
-    return this.kelasService.create(body);
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.kelasService.findOne(+id);
   }
 
-  // PUT /kelas/:id
-  @Put(':id')
-  update(@Param('id') id: string, @Body() body) {
-    return this.kelasService.update(Number(id), body);
-  }
-
-  // DELETE /kelas/:id
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.kelasService.remove(Number(id));
+    return this.kelasService.remove(+id);
   }
 }

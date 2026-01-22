@@ -1,51 +1,84 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, Logger } from '@nestjs/common';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { publishUserCreated } from '../rabbitmq';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(User)
-    private userRepo: Repository<User>,
+    private readonly userRepository: Repository<User>,
+    private readonly amqpConnection: AmqpConnection,
   ) {}
 
-  async register(username: string, password: string, role: string) {
-    const exist = await this.userRepo.findOne({ where: { username } });
-    if (exist) {
-      throw new BadRequestException('User sudah ada');
-    }
+  // =====================
+  // REGISTER
+  // =====================
+  async register(registerDto: RegisterDto) {
+    const { email, username, password, role } = registerDto;
 
-    const user = this.userRepo.create({ username, password, role });
-    await this.userRepo.save(user);
+    // 1. Cek Duplikat
+    const existing = await this.userRepository.findOne({
+      where: [{ email }, { username }]
+    });
+    if (existing) throw new ConflictException('Email atau Username sudah ada');
 
-    // 🔔 KIRIM EVENT KE RABBITMQ
-    publishUserCreated({
-      id: user.id,
-      username: user.username,
-      role: user.role,
+    // 2. Buat User
+    const newUser = this.userRepository.create({
+      email,
+      username,
+      password,
+      role: role || 'mahasiswa',
     });
 
-    return { message: 'Register berhasil', user };
+    // 3. Simpan ke DB
+    try {
+      await this.userRepository.save(newUser);
+    } catch (e) {
+      this.logger.error('Gagal simpan ke DB:', e);
+      throw new BadRequestException('Gagal menyimpan user.');
+    }
+
+    // 4. Kirim RabbitMQ (DENGAN PENGAMAN)
+    // Kalau ini error, aplikasi TIDAK AKAN CRASH, user tetap terdaftar.
+    try {
+      await this.amqpConnection.publish(
+        'user_exchange', 
+        'user.created', 
+        {
+          event: 'user.created',
+          data: {
+            userId: newUser.id,
+            email: newUser.email,
+            role: newUser.role,
+          },
+        }
+      );
+      this.logger.log(`Event user.created dikirim untuk ${newUser.email}`);
+    } catch (error) {
+      // Kita cuma log errornya, tapi tidak throw exception ke user
+      this.logger.error('Gagal kirim event RabbitMQ:', error);
+    }
+
+    return { message: 'Register berhasil', data: newUser };
   }
 
-  async login(username: string, password: string) {
-    const user = await this.userRepo.findOne({
-      where: { username, password },
-    });
+  // =====================
+  // LOGIN
+  // =====================
+  async login(loginDto: LoginDto) {
+    const { username, password } = loginDto;
+    const user = await this.userRepository.findOne({ where: { username } });
 
-    if (!user) {
-      throw new BadRequestException('Login gagal');
+    if (!user || user.password !== password) {
+      throw new BadRequestException('Username atau Password salah');
     }
 
-    return {
-      message: 'Login berhasil',
-      user: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-      },
-    };
+    return { message: 'Login berhasil', user };
   }
 }

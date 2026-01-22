@@ -1,78 +1,65 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Jadwal } from './jadwal.entity';
 import { Kelas } from '../kelas/kelas.entity';
+import { CreateJadwalDto } from './dto/create-jadwal.dto';
 
 @Injectable()
 export class JadwalService {
   constructor(
     @InjectRepository(Jadwal)
-    private readonly jadwalRepo: Repository<Jadwal>,
-
+    private readonly jadwalRepository: Repository<Jadwal>,
+    
     @InjectRepository(Kelas)
-    private readonly kelasRepo: Repository<Kelas>,
+    private readonly kelasRepository: Repository<Kelas>,
   ) {}
 
-  // CREATE jadwal baru
-  async create(data: {
-    namaKelas: string;
-    hari: string;
-    jamMulai: string;
-    jamSelesai: string;
-    kelasId: number;
-  }): Promise<Jadwal> {
-    const kelas = await this.kelasRepo.findOneBy({ id: data.kelasId });
-    if (!kelas) throw new Error('Kelas tidak ditemukan');
+  // CREATE
+  async create(createJadwalDto: CreateJadwalDto) {
+    const { kelasId, hari, jam_mulai, jam_selesai } = createJadwalDto;
 
-    const jadwal = this.jadwalRepo.create({
-      ...data,
-      kelas,
+    const kelas = await this.kelasRepository.findOne({ where: { id: kelasId } });
+    if (!kelas) {
+      throw new NotFoundException(`Kelas dengan ID ${kelasId} tidak ditemukan`);
+    }
+
+    const jadwal = this.jadwalRepository.create({
+      hari,
+      jam_mulai,
+      jam_selesai,
+      kelas: kelas,
+      kelasId: kelas.id
     });
 
-    return await this.jadwalRepo.save(jadwal);
+    return await this.jadwalRepository.save(jadwal);
   }
 
-  // READ all jadwal
-  async findAll(): Promise<Jadwal[]> {
-    return this.jadwalRepo.find({ relations: ['kelas'] });
+  // FIND ALL
+  async findAll() {
+    return await this.jadwalRepository.find({
+      relations: ['kelas'], 
+    });
   }
 
-  // READ by id
-  async findOne(id: number): Promise<Jadwal> {
-    const jadwal = await this.jadwalRepo.findOne({
+  // === TAMBAHAN UNTUK MEMPERBAIKI ERROR ===
+  
+  // FIND ONE
+  async findOne(id: number) {
+    const jadwal = await this.jadwalRepository.findOne({ 
       where: { id },
-      relations: ['kelas'],
+      relations: ['kelas'] 
     });
-    if (!jadwal) throw new Error('Jadwal tidak ditemukan');
+    if (!jadwal) throw new NotFoundException(`Jadwal ID ${id} tidak ditemukan`);
     return jadwal;
   }
 
-  // UPDATE jadwal
-  async update(
-    id: number,
-    data: {
-      namaKelas?: string;
-      hari?: string;
-      jamMulai?: string;
-      jamSelesai?: string;
-      kelasId?: number;
-    },
-  ): Promise<Jadwal> {
-    const jadwal = await this.findOne(id);
-
-    if (data.kelasId) {
-      const kelas = await this.kelasRepo.findOneBy({ id: data.kelasId });
-      if (!kelas) throw new Error('Kelas tidak ditemukan');
-      jadwal.kelas = kelas;
+  // REMOVE
+  async remove(id: number) {
+    const result = await this.jadwalRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Jadwal ID ${id} tidak ditemukan`);
     }
-
-    Object.assign(jadwal, data);
-    return await this.jadwalRepo.save(jadwal);
-  }
-
-  // DELETE jadwal
-  async remove(id: number): Promise<void> {
-    await this.jadwalRepo.delete(id);
+    return { message: 'Jadwal berhasil dihapus' };
   }
 }

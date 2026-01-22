@@ -7,6 +7,7 @@ import { Kelas } from '../kelas/kelas.entity';
 import { Jadwal } from '../jadwal/jadwal.entity';
 
 @Module({
+  // Memuat Booking, Kelas, dan Jadwal agar bisa di-inject di Service
   imports: [TypeOrmModule.forFeature([Booking, Kelas, Jadwal])],
   controllers: [BookingController],
   providers: [BookingService],

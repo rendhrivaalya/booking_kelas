@@ -1,6 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Kelas } from '../kelas/kelas.entity';
-import { Jadwal } from '../jadwal/jadwal.entity';
 
 @Entity()
 export class Booking {
@@ -8,14 +7,31 @@ export class Booking {
   id: number;
 
   @Column()
-  namaUser: string;
+  userId: number;
 
-  @Column()
-  tanggalBooking: string;
+  // Kita simpan role di sini untuk history, atau validasi di service
+  // Tapi biasanya role tidak disimpan di booking, cuma buat validasi.
+  
+  @Column({ type: 'date' })
+  tanggal: string; // YYYY-MM-DD
 
-  @ManyToOne(() => Kelas)
+  @Column({ type: 'time' })
+  jam_mulai: string; // HH:mm:ss
+
+  @Column({ type: 'time' })
+  jam_selesai: string; // HH:mm:ss
+
+  @Column({ type: 'text' })
+  keperluan: string; // "Kelas Pengganti", "Seminar", dll
+
+  @Column({ default: 'booked' })
+  status: string;
+
+  // Relasi ke Kelas
+  @ManyToOne(() => Kelas, (kelas) => kelas.bookings)
+  @JoinColumn({ name: 'kelasId' })
   kelas: Kelas;
 
-  @ManyToOne(() => Jadwal)
-  jadwal: Jadwal;
+  @Column()
+  kelasId: number;
 }

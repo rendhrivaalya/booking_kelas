@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Kelas } from '../kelas/kelas.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Kelas } from '../kelas/kelas.entity'; // Pastikan import Kelas
 
 @Entity()
 export class Jadwal {
@@ -7,17 +7,19 @@ export class Jadwal {
   id: number;
 
   @Column()
-  namaKelas: string;
+  hari: string; // Senin, Selasa...
 
-  @Column()
-  hari: string;
+  @Column({ type: 'time' })
+  jam_mulai: string;
 
-  @Column()
-  jamMulai: string;
+  @Column({ type: 'time' })
+  jam_selesai: string;
 
-  @Column()
-  jamSelesai: string;
-
-  @ManyToOne(() => Kelas, (kelas) => kelas.jadwal)
+  // === TAMBAHAN: RELASI KE KELAS ===
+  @ManyToOne(() => Kelas, (kelas) => kelas.jadwals, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'kelasId' })
   kelas: Kelas;
+
+  @Column()
+  kelasId: number;
 }

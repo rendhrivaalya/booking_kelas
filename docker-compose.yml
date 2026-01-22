@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  mysql-user:
+    image: mysql:8
+    container_name: user-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: user_db
+    ports:
+      - "3307:3306"
+
+  mysql-booking:
+    image: mysql:8
+    container_name: booking-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: booking_kelas
+    ports:
+      - "3308:3306"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mysql-user
+      - rabbitmq
+    environment:
+      DATABASE_HOST: mysql-user
+      DATABASE_PORT: 3306
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      DATABASE_NAME: user_db
+      RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672
+    restart: always
+
+  booking-service:
+    build: ./booking-service
+    container_name: booking-service
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mysql-booking
+      - rabbitmq
+      - user-service
+    environment:
+      DATABASE_HOST: mysql-booking
+      DATABASE_PORT: 3306
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      DATABASE_NAME: booking_kelas
+      USER_SERVICE_URL: http://user-service:3001
+      RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672
+    restart: always
