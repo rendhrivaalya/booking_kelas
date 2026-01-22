@@ -15,8 +15,9 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return "User Service is running"', () => {
+      // Ubah baris di bawah ini agar sesuai dengan return AppService
+      expect(appController.getHello()).toBe('User Service is running'); 
     });
   });
 });
