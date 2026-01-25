@@ -18,7 +18,7 @@
     <nav class="bg-indigo-900 text-white p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold flex items-center">
-                <i class="fas fa-chalkboard-teacher mr-3 text-yellow-400"></i> Panel Dosen
+                <i class="fas fa-chalkboard-teacher mr-3 text-yellow-400"></i> Dashboard Dosen
             </h1>
             <div class="flex items-center gap-4">
                 <span class="hidden sm:block text-indigo-200">Halo, {{ $user['username'] }}</span>

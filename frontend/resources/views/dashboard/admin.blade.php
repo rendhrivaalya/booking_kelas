@@ -19,7 +19,7 @@
 
     <nav class="bg-gray-900 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-xl font-bold flex items-center">
-            <i class="fas fa-calendar-check mr-3 text-green-400"></i> Admin Booking
+            <i class="fas fa-calendar-check mr-3 text-green-400"></i> Dashboard Admin Booking
         </h1>
         <div class="flex items-center gap-4">
             <span class="hidden sm:block text-gray-300">Halo, {{ $user['username'] }}</span>

@@ -8,10 +8,12 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @UsePipes(new ValidationPipe({ whitelist: true }))
-  async register(@Body() body: RegisterDto) {
-    return await this.authService.register(body);
-  }
+@UsePipes(new ValidationPipe({ whitelist: true }))
+async register(@Body() body: RegisterDto) {
+  console.log('BODY MASUK REGISTER:', body);
+  return await this.authService.register(body);
+}
+
 
   @Post('login')
   @UsePipes(new ValidationPipe({ whitelist: true }))

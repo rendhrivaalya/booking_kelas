@@ -3,11 +3,12 @@ import {
   BadRequestException,
   ConflictException,
   Logger,
+  Inject, // <--- TAMBAHKAN INI
 } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { ClientProxy } from '@nestjs/microservices';
 import * as crypto from 'crypto';
 
 import { User } from './user.entity';
@@ -19,13 +20,13 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly amqpConnection: AmqpConnection,
-  ) {}
+  @InjectRepository(User)
+  private readonly userRepository: Repository<User>,
+  @Inject('USER_SERVICE') private readonly client: ClientProxy, // Ganti inject-nya
+) {}
 
   // =====================
-  // HELPER HASH PASSWORD (BUILT-IN NODE)
+  // HASH PASSWORD
   // =====================
   private hashPassword(password: string): string {
     return crypto
@@ -38,21 +39,25 @@ export class AuthService {
   // REGISTER
   // =====================
   async register(registerDto: RegisterDto) {
+    this.logger.log('REGISTER CALLED');
+    this.logger.log(`BODY: ${JSON.stringify(registerDto)}`);
+
     const { email, username, password, role } = registerDto;
 
-    // 1. Cek duplikat email / username
+    // 1. cek duplikat
     const existing = await this.userRepository.findOne({
       where: [{ email }, { username }],
     });
 
     if (existing) {
+      this.logger.warn('EMAIL / USERNAME SUDAH ADA');
       throw new ConflictException('Email atau Username sudah ada');
     }
 
-    // 2. HASH PASSWORD
+    // 2. hash password
     const hashedPassword = this.hashPassword(password);
 
-    // 3. Buat user baru
+    // 3. create entity
     const newUser = this.userRepository.create({
       email,
       username,
@@ -60,46 +65,53 @@ export class AuthService {
       role: role || 'mahasiswa',
     });
 
-    // 4. Simpan ke DB
-    await this.userRepository.save(newUser);
+    // 4. save ke DB (WAJIB pakai return value)
+    let savedUser: User;
 
-    // 5. Kirim event RabbitMQ (optional)
     try {
-      await this.amqpConnection.publish(
-        'user_exchange',
-        'user.created',
-        {
-          event: 'user.created',
-          data: {
-            userId: newUser.id,
-            email: newUser.email,
-            role: newUser.role,
-          },
-        },
-      );
+      this.logger.log('MENYIMPAN USER KE DATABASE...');
+      savedUser = await this.userRepository.save(newUser);
+      this.logger.log(`USER TERSIMPAN DENGAN ID = ${savedUser.id}`);
     } catch (error) {
-      this.logger.error('RabbitMQ error:', error);
+      this.logger.error('ERROR SAAT SAVE USER', error);
+      throw new BadRequestException('Gagal menyimpan user');
     }
 
-    // 6. Response
+    // 5. kirim event rabbitmq
+    try {
+  this.logger.log('MENGIRIM EVENT KE RABBITMQ...');
+  // Gunakan emit (Standard NestJS Microservices)
+  this.client.emit('user.created', {
+      event: 'user.created',
+      data: {
+        userId: savedUser.id,
+        email: savedUser.email,
+        role: savedUser.role,
+      },
+  });
+  this.logger.log('EVENT user.created TERKIRIM KE QUEUE user_queue');
+} catch (error) {
+  this.logger.error('ERROR RABBITMQ', error);
+}
+
+    // 6. response
     return {
       message: 'Register berhasil',
       data: {
-        id: newUser.id,
-        email: newUser.email,
-        username: newUser.username,
-        role: newUser.role,
+        id: savedUser.id,
+        email: savedUser.email,
+        username: savedUser.username,
+        role: savedUser.role,
       },
     };
   }
 
   // =====================
-  // LOGIN (USERNAME + PASSWORD)
+  // LOGIN
   // =====================
   async login(loginDto: LoginDto) {
     const { username, password } = loginDto;
 
-    // 1. Cari user
     const user = await this.userRepository.findOne({
       where: { username },
     });
@@ -108,15 +120,12 @@ export class AuthService {
       throw new BadRequestException('Username atau Password salah');
     }
 
-    // 2. HASH password input
     const hashedInput = this.hashPassword(password);
 
-    // 3. Bandingkan hash
     if (user.password !== hashedInput) {
       throw new BadRequestException('Username atau Password salah');
     }
 
-    // 4. Login sukses
     return {
       message: 'Login berhasil',
       user: {

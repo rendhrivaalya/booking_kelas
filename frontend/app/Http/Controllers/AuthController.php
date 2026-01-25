@@ -3,71 +3,56 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use App\Models\User; 
-use Illuminate\Support\Facades\Hash; 
+use Illuminate\Support\Facades\Http; // Wajib pakai ini untuk nembak API
 
 class AuthController extends Controller
 {
-    // --- FITUR REGISTER ---
-    public function registerForm()
-    {
+    public function registerForm() {
         return view('auth.register');
     }
 
     public function register(Request $request)
     {
-        // 1. Validasi Input
-        $request->validate([
-            'username' => 'required|unique:users',
-            'email'    => 'required|email|unique:users',
-            'password' => 'required|min:4',
-            'role'     => 'required|in:dosen,mahasiswa,admin'
-        ]);
-
-        // 2. Simpan ke Database (REAL)
-        User::create([
+        // 1. Kirim data ke NestJS (Port 3001 sesuai Docker kamu)
+        // Kita pakai localhost karena kamu jalankan 'php artisan serve'
+        $response = Http::post('http://127.0.0.1:3001/auth/register', [
             'username' => $request->username,
             'email'    => $request->email,
-            'password' => Hash::make($request->password), // Password di-enkripsi
-            'role'     => $request->role
+            'password' => $request->password,
+            'role'     => $request->role, // Pastikan isinya 'Dosen' atau 'Mahasiswa'
         ]);
 
-        // 3. Sukses
-        return redirect('/login')->with('success', 'Akun berhasil dibuat! Silakan Login.');
+        // 2. CEK APAKAH BERHASIL (Ini No. 2 & 3 yang benar)
+        if ($response->successful()) {
+            return redirect('/login')->with('success', 'Berhasil! Cek Log NestJS & RabbitMQ!');
+        }
+
+        // Kalau gagal, intip errornya
+        dd($response->json(), "Cek apakah NestJS nyala di port 3001?");
     }
 
-    // --- FITUR LOGIN ---
-    public function loginForm()
-    {
+    public function loginForm() {
         return view('auth.login');
     }
 
     public function login(Request $request)
     {
-        // Bisa login pakai Username ATAU Email
-        $input = $request->input('username') ?? $request->input('email');
-        $password = $request->input('password');
-        
-        $type = filter_var($input, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $response = Http::post('http://127.0.0.1:3001/auth/login', [
+            'username' => $request->username,
+            'password' => $request->password,
+        ]);
 
-        if (Auth::attempt([$type => $input, 'password' => $password])) {
-            $request->session()->regenerate();
-            
-            // Simpan session manual (PENTING buat Dashboard kamu)
-            session(['user' => Auth::user()->toArray()]); 
-
+        if ($response->successful()) {
+            $data = $response->json();
+            session(['user' => $data['user']]); 
             return redirect('/dashboard');
         }
 
-        return back()->withErrors(['email' => 'Username atau Password salah.']);
+        return back()->withErrors(['email' => 'Login Gagal.']);
     }
 
-    public function logout(Request $request)
-    {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->forget('user');
+    public function logout(Request $request) {
+        $request->session()->flush();
         return redirect('/login');
     }
 }
