@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './user.entity';
-import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -13,11 +12,17 @@ describe('AuthService', () => {
         AuthService,
         {
           provide: getRepositoryToken(User),
-          useValue: {}, // Mock database
+          useValue: {
+            save: jest.fn(),
+            findOne: jest.fn(),
+          },
         },
         {
-          provide: AmqpConnection,
-          useValue: {}, // Mock RabbitMQ
+          // Gunakan string token 'USER_SERVICE' bukan class AmqpConnection
+          provide: 'USER_SERVICE', 
+          useValue: {
+            emit: jest.fn(), // Mock fungsi emit agar tidak error saat dipanggil
+          },
         },
       ],
     }).compile();

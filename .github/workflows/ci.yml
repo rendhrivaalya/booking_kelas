@@ -1,41 +1,31 @@
 name: CI/CD Booking Kelas
-
-# Trigger otomatis ketika ada push ke main
 on:
   push:
     branches: [ "main" ]
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # 1️⃣ Ambil kode repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 3️⃣ Masuk folder user-service
       - name: Install Dependencies
         working-directory: ./user-service
         run: npm install
 
-      # 4️⃣ Jalankan unit test
       - name: Run Unit Tests
         working-directory: ./user-service
         run: npm run test
 
-      # 5️⃣ Build aplikasi
       - name: Build User Service
         working-directory: ./user-service
         run: npm run build
 
-      # 6️⃣ (Opsional) Push image ke Docker Hub
       - name: Build & Push Docker Image
         if: github.event_name == 'push'
         uses: docker/build-push-action@v5
