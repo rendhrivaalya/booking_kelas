@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Kelas } from '../kelas/kelas.entity'; // Pastikan import Kelas
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm'; // Tambah OneToMany
+import { Kelas } from '../kelas/kelas.entity';
+import { Booking } from '../booking/booking.entity'; // Import Booking
 
 @Entity()
 export class Jadwal {
@@ -7,19 +8,29 @@ export class Jadwal {
   id: number;
 
   @Column()
-  hari: string; // Senin, Selasa...
+  hari: string;
 
-  @Column({ type: 'time' })
+  @Column({ type: 'date', nullable: true })
+  tanggal: string;
+
+  @Column()
   jam_mulai: string;
 
-  @Column({ type: 'time' })
+  @Column()
   jam_selesai: string;
 
-  // === TAMBAHAN: RELASI KE KELAS ===
-  @ManyToOne(() => Kelas, (kelas) => kelas.jadwals, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'kelasId' })
-  kelas: Kelas;
+  @Column({ default: 'available' })
+  status: string;
 
   @Column()
   kelasId: number;
+
+  @ManyToOne(() => Kelas)
+  @JoinColumn({ name: 'kelasId' })
+  kelas: Kelas;
+
+  // === TAMBAHKAN RELASI INI DI PALING BAWAH ===
+  @OneToMany(() => Booking, (booking) => booking.jadwal)
+  bookings: Booking[];
+  // ============================================
 }

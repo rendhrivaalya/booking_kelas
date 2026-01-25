@@ -1,35 +1,27 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ $title ?? 'Sistem Booking Kelas' }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard</title>
 
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body>
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-dark bg-dark">
     <div class="container">
-        <span class="navbar-brand">Sistem Booking Kelas</span>
-
-        {{-- LOGOUT HANYA MUNCUL JIKA SUDAH LOGIN --}}
-        @if(session()->has('user'))
-            <form method="POST" action="/logout">
-                @csrf
-                <button type="submit" class="btn btn-danger btn-sm">
-                    Logout
-                </button>
-            </form>
+        <span class="navbar-brand">Booking Kelas</span>
+        @if(session('user'))
+            <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
         @endif
     </div>
 </nav>
 
-<!-- CONTENT -->
 <div class="container mt-4">
     @yield('content')
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

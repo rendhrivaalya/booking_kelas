@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Kelas } from '../kelas/kelas.entity';
+import { Jadwal } from '../jadwal/jadwal.entity';
+import { Kelas } from '../kelas/kelas.entity'; // <--- Import Kelas
 
 @Entity()
 export class Booking {
@@ -9,29 +10,25 @@ export class Booking {
   @Column()
   userId: number;
 
-  // Kita simpan role di sini untuk history, atau validasi di service
-  // Tapi biasanya role tidak disimpan di booking, cuma buat validasi.
-  
-  @Column({ type: 'date' })
-  tanggal: string; // YYYY-MM-DD
-
-  @Column({ type: 'time' })
-  jam_mulai: string; // HH:mm:ss
-
-  @Column({ type: 'time' })
-  jam_selesai: string; // HH:mm:ss
-
-  @Column({ type: 'text' })
-  keperluan: string; // "Kelas Pengganti", "Seminar", dll
-
-  @Column({ default: 'booked' })
-  status: string;
-
-  // Relasi ke Kelas
-  @ManyToOne(() => Kelas, (kelas) => kelas.bookings)
-  @JoinColumn({ name: 'kelasId' })
-  kelas: Kelas;
+  @Column()
+  jadwalId: number;
 
   @Column()
   kelasId: number;
+
+  @Column()
+  keperluan: string;
+
+  @Column()
+  status: string;
+
+  // === Relasi ke Jadwal ===
+  @ManyToOne(() => Jadwal, (jadwal) => jadwal.bookings)
+  jadwal: Jadwal;
+
+  // === TAMBAHKAN RELASI KE KELAS (INI YANG BIKIN ERROR ENTITY) ===
+  @ManyToOne(() => Kelas, (kelas) => kelas.bookings)
+  @JoinColumn({ name: 'kelasId' })
+  kelas: Kelas;
+  // ==============================================================
 }

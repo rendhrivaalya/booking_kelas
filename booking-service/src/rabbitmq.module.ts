@@ -6,18 +6,22 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
   imports: [
     RabbitMQModule.forRootAsync({
       useFactory: () => ({
-        uri: process.env.RABBITMQ_URI || 'amqp://guest:guest@rabbitmq:5672',
+        // Ganti hostname 'rabbitmq' ke '127.0.0.1' supaya bisa connect dari host Windows
+        uri: process.env.RABBITMQ_URI || 'amqp://guest:guest@127.0.0.1:5672',
+
         exchanges: [
           {
             name: 'user_exchange',
             type: 'topic',
           },
         ],
+
         connectionInitOptions: { wait: true },
-        // --- TAMBAHAN PENTING (Supaya gak gampang disconnect) ---
+
+        // --- Tetap pakai supaya koneksi stabil ---
         connectionManagerOptions: {
-          heartbeatIntervalInSeconds: 60, // Cek detak jantung tiap 60 detik
-          reconnectTimeInSeconds: 5,      // Coba connect lagi tiap 5 detik kalau putus
+          heartbeatIntervalInSeconds: 60, // Cek heartbeat tiap 60 detik
+          reconnectTimeInSeconds: 5,      // Coba reconnect tiap 5 detik kalau putus
         },
       }),
     }),

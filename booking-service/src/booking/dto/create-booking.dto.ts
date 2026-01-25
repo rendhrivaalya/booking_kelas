@@ -1,33 +1,21 @@
-import { IsNotEmpty, IsString, IsNumber, Matches } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreateBookingDto {
   @IsNotEmpty()
-  @IsNumber()
+  // Sesuaikan: Jika userId kamu di DB itu INT, pakai @IsNumber(). Jika UUID string, pakai @IsString()
+  @IsNumber() 
   userId: number;
 
   @IsNotEmpty()
   @IsString()
-  role: string; // 'mahasiswa', 'dosen', 'staf', 'admin'
+  role: string;
 
   @IsNotEmpty()
-  @IsString()
-  // Validasi format kode kelas (Angka.Angka.Angka)
-  // @Matches(/^\d+\.\d+\.\d+$/, { message: 'Format kode kelas salah (contoh: 7.1.1)' })
-  kode_kelas: string; // Kita pakai kode string (7.1.1) buat input biar user gampang
-
-  @IsNotEmpty()
-  @IsString()
-  tanggal: string; // "2026-01-22"
-
-  @IsNotEmpty()
-  @IsString()
-  jam_mulai: string; // "08:00"
-
-  @IsNotEmpty()
-  @IsString()
-  jam_selesai: string; // "10:00"
+  @IsNumber()
+  jadwalId: number; // <--- Kita cuma butuh ID ini untuk cari data lainnya
 
   @IsNotEmpty()
   @IsString()
   keperluan: string;
+
 }

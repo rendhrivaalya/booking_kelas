@@ -51,6 +51,9 @@ services:
       - mysql-user
       - rabbitmq
     environment:
+      # --- TAMBAHKAN BARIS INI ---
+      API_URL: http://booking-service:3002
+      # ---------------------------
       DATABASE_HOST: mysql-user
       DATABASE_PORT: 3306
       DATABASE_USER: root
